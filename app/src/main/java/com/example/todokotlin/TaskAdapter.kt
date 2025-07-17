@@ -18,7 +18,8 @@ import java.util.Locale
 class TaskAdapter(
     private val tasks: MutableList<Task>,
     private val onEdit: (Task) -> Unit,
-    private val onDelete: (Task) -> Unit
+    private val onDelete: (Task) -> Unit,
+    private val onStatusChanged: (() -> Unit)? = null
 ) : RecyclerView.Adapter<TaskAdapter.TaskViewHolder>() {
 
     inner class TaskViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -44,10 +45,15 @@ class TaskAdapter(
         // Title click shows details dialog
         holder.title.setOnClickListener {
             val context = holder.itemView.context
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-            val dueDateStr = if (task.dueDate != null) dateFormat.format(Date(task.dueDate!!)) else "No due date set"
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+            val dateStr = if (task.dueDate != null) dateFormat.format(Date(task.dueDate!!)) else "Not set"
+            val timeStr = if (task.dueDate != null) timeFormat.format(Date(task.dueDate!!)) else "Not set"
             val remindMeStr = if (task.remindMe) "Yes" else "No"
-            val details = "Description: ${task.description}\nDue Date: $dueDateStr\nRemind Me: $remindMeStr"
+
+            val details = "Description: ${task.description}\n\nDue Date: $dateStr\nDue Time: $timeStr\nRemind Me: $remindMeStr"
+
             val dialog = androidx.appcompat.app.AlertDialog.Builder(context)
                 .setTitle(task.title)
                 .setMessage(details)
@@ -68,7 +74,7 @@ class TaskAdapter(
             } else {
                 task.checkedTime = null
             }
-            sortTasks()
+            onStatusChanged?.invoke()
         }
         // Apply thick strike-through if checked
         if (task.done) {
